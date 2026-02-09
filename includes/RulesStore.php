@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 class RulesStore
 {
     public const TABLE_NAME = 'lrm_rules';
+    public const TABLE_404 = 'lrm_404_logs';
 
     public static function table_name(): string
     {
@@ -15,13 +16,20 @@ class RulesStore
         return $wpdb->prefix . self::TABLE_NAME;
     }
 
+    public static function table_404_name(): string
+    {
+        global $wpdb;
+        return $wpdb->prefix . self::TABLE_404;
+    }
+
     public static function install(): void
     {
         global $wpdb;
-        $table_name = self::table_name();
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table_name (
+        // Rules table
+        $table_rules = self::table_name();
+        $sql_rules = "CREATE TABLE $table_rules (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             from_url varchar(191) NOT NULL,
             to_url text NOT NULL,
@@ -31,10 +39,73 @@ class RulesStore
             KEY from_url (from_url)
         ) $charset_collate;";
 
+        // 404 Logs table
+        $table_404 = self::table_404_name();
+        $sql_404 = "CREATE TABLE $table_404 (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            url varchar(191) NOT NULL,
+            hit_count int(11) NOT NULL DEFAULT 1,
+            referrer text,
+            first_seen datetime DEFAULT CURRENT_TIMESTAMP,
+            last_seen datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY url (url)
+        ) $charset_collate;";
+
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+        dbDelta($sql_rules);
+        dbDelta($sql_404);
 
         self::migrate();
+    }
+
+    // ========== 404 Logs Methods ==========
+
+    public static function log_404(string $url, string $referrer = ''): void
+    {
+        global $wpdb;
+        $table = self::table_404_name();
+        $normalized = self::normalize_path($url);
+
+        // Check if entry exists
+        $existing = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE url = %s", $normalized));
+
+        if ($existing) {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE $table SET hit_count = hit_count + 1, last_seen = NOW() WHERE id = %d",
+                $existing
+            ));
+        } else {
+            $wpdb->insert(
+                $table,
+                [
+                    'url' => $normalized,
+                    'referrer' => esc_url_raw($referrer),
+                ],
+                ['%s', '%s']
+            );
+        }
+    }
+
+    public static function get_404s(): array
+    {
+        global $wpdb;
+        $table = self::table_404_name();
+        return $wpdb->get_results("SELECT * FROM $table ORDER BY hit_count DESC, last_seen DESC LIMIT 100", ARRAY_A) ?: [];
+    }
+
+    public static function delete_404(string $url): void
+    {
+        global $wpdb;
+        $table = self::table_404_name();
+        $wpdb->delete($table, ['url' => self::normalize_path($url)], ['%s']);
+    }
+
+    public static function clear_all_404s(): void
+    {
+        global $wpdb;
+        $table = self::table_404_name();
+        $wpdb->query("TRUNCATE TABLE $table");
     }
 
     private static function migrate(): void

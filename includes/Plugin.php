@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 
 require_once LRM_PATH . 'includes/RulesStore.php';
 require_once LRM_PATH . 'includes/Redirector.php';
+require_once LRM_PATH . 'includes/Tracker404.php';
 require_once LRM_PATH . 'includes/Admin/Page.php';
 
 final class Plugin
@@ -30,6 +31,8 @@ final class Plugin
     {
         // Front: exécution des redirections tôt
         add_action('template_redirect', [Redirector::class, 'maybe_redirect'], 1);
+        // Front: suivi des 404
+        Tracker404::init();
         // Admin: page réglages
         if (is_admin()) {
             add_action('admin_menu', [Admin\Page::class, 'register_menu']);
