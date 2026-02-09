@@ -27,8 +27,20 @@ final class Plugin
         RulesStore::install();
     }
 
+    private static function maybe_install_tables(): void
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'lrm_rules';
+        // Check if table exists
+        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
+            RulesStore::install();
+        }
+    }
+
     public function init(): void
     {
+        // Auto-install tables if missing
+        self::maybe_install_tables();
         // Front: exécution des redirections tôt
         add_action('template_redirect', [Redirector::class, 'maybe_redirect'], 1);
         // Front: suivi des 404
