@@ -3,10 +3,14 @@ namespace Lika\RedirectManager\Admin;
 
 use Lika\RedirectManager\RulesStore;
 
-if (!defined('ABSPATH')) { exit; }
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-class Page {
-    public static function register_menu() : void {
+class Page
+{
+    public static function register_menu(): void
+    {
         add_options_page(
             __('Redirections', 'lika-redirect-manager'),
             __('Redirections', 'lika-redirect-manager'),
@@ -16,17 +20,20 @@ class Page {
         );
     }
 
-    public static function handle_request() : void {
-        if (!current_user_can('manage_options')) { return; }
+    public static function handle_request(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
 
         // Ajout d’une règle
         if (isset($_POST['lrm_action']) && $_POST['lrm_action'] === 'add') {
             check_admin_referer('lrm_nonce');
             $from = isset($_POST['lrm_from']) ? trim(wp_unslash($_POST['lrm_from'])) : '';
-            $to   = isset($_POST['lrm_to'])   ? trim(wp_unslash($_POST['lrm_to']))   : '';
+            $to = isset($_POST['lrm_to']) ? trim(wp_unslash($_POST['lrm_to'])) : '';
             $code = isset($_POST['lrm_code']) ? (int) $_POST['lrm_code'] : 301;
 
-            if ($from !== '' && $to !== '' && in_array($code, [301,302,307,308], true)) {
+            if ($from !== '' && $to !== '' && in_array($code, [301, 302, 307, 308], true)) {
                 RulesStore::add($from, $to, $code);
                 add_settings_error('lrm_notices', 'lrm_added', __('Règle ajoutée.', 'lika-redirect-manager'), 'updated');
             } else {
@@ -37,7 +44,7 @@ class Page {
 
         // Suppression d’une règle
         if (isset($_GET['lrm_action']) && $_GET['lrm_action'] === 'delete' && isset($_GET['id'])) {
-            $id = sanitize_text_field(wp_unslash($_GET['id']));
+            $id = (int) $_GET['id'];
             check_admin_referer('lrm_delete_' . $id);
             RulesStore::delete($id);
             add_settings_error('lrm_notices', 'lrm_deleted', __('Règle supprimée.', 'lika-redirect-manager'), 'updated');
@@ -45,8 +52,11 @@ class Page {
         }
     }
 
-    public static function render() : void {
-        if (!current_user_can('manage_options')) { return; }
+    public static function render(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
         $rules = RulesStore::all();
         settings_errors('lrm_notices');
         ?>
@@ -64,7 +74,7 @@ class Page {
                         </th>
                         <td>
                             <input type="text" id="lrm_from" name="lrm_from" class="regular-text" required
-                                   placeholder="/ancienne-page ou https://exemple.com/ancienne-page?x=1">
+                                placeholder="/ancienne-page ou https://exemple.com/ancienne-page?x=1">
                             <p class="description">
                                 <?php esc_html_e('Chemin ou URL complète. La comparaison se fait sur chemin + requête.', 'lika-redirect-manager'); ?>
                             </p>
@@ -76,14 +86,15 @@ class Page {
                         </th>
                         <td>
                             <input type="text" id="lrm_to" name="lrm_to" class="regular-text" required
-                                   placeholder="/nouvelle-page ou https://exemple.com/nouvelle-page">
+                                placeholder="/nouvelle-page ou https://exemple.com/nouvelle-page">
                             <p class="description">
                                 <?php esc_html_e('Chemin interne ou URL absolue externe. Les chemins seront préfixés par le domaine du site.', 'lika-redirect-manager'); ?>
                             </p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="lrm_code"><?php esc_html_e('Code de redirection', 'lika-redirect-manager'); ?></label></th>
+                        <th scope="row"><label
+                                for="lrm_code"><?php esc_html_e('Code de redirection', 'lika-redirect-manager'); ?></label></th>
                         <td>
                             <select id="lrm_code" name="lrm_code">
                                 <option value="301" selected>301 (permanent)</option>
@@ -100,9 +111,9 @@ class Page {
             <hr>
 
             <h2><?php esc_html_e('Règles existantes', 'lika-redirect-manager'); ?></h2>
-            <?php if (empty($rules)) : ?>
+            <?php if (empty($rules)): ?>
                 <p><?php esc_html_e('Aucune règle pour le moment.', 'lika-redirect-manager'); ?></p>
-            <?php else : ?>
+            <?php else: ?>
                 <table class="widefat striped">
                     <thead>
                         <tr>
@@ -113,29 +124,29 @@ class Page {
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($rules as $r): ?>
-                        <tr>
-                            <td><code><?php echo esc_html($r['from']); ?></code></td>
-                            <td><code><?php echo esc_html($r['to']); ?></code></td>
-                            <td><?php echo (int) $r['code']; ?></td>
-                            <td>
-                                <?php
-                                $del_url = wp_nonce_url(
-                                    add_query_arg([
-                                        'page' => 'lika-redirect-manager',
-                                        'lrm_action' => 'delete',
-                                        'id' => $r['id'],
-                                    ], admin_url('options-general.php')),
-                                    'lrm_delete_' . $r['id']
-                                );
-                                ?>
-                                <a class="button-link delete" href="<?php echo esc_url($del_url); ?>"
-                                   onclick="return confirm('<?php echo esc_js(__('Supprimer cette règle ?', 'lika-redirect-manager')); ?>');">
-                                   <?php esc_html_e('Supprimer', 'lika-redirect-manager'); ?>
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($rules as $r): ?>
+                            <tr>
+                                <td><code><?php echo esc_html($r['from']); ?></code></td>
+                                <td><code><?php echo esc_html($r['to']); ?></code></td>
+                                <td><?php echo (int) $r['code']; ?></td>
+                                <td>
+                                    <?php
+                                    $del_url = wp_nonce_url(
+                                        add_query_arg([
+                                            'page' => 'lika-redirect-manager',
+                                            'lrm_action' => 'delete',
+                                            'id' => $r['id'],
+                                        ], admin_url('options-general.php')),
+                                        'lrm_delete_' . $r['id']
+                                    );
+                                    ?>
+                                    <a class="button-link delete" href="<?php echo esc_url($del_url); ?>"
+                                        onclick="return confirm('<?php echo esc_js(__('Supprimer cette règle ?', 'lika-redirect-manager')); ?>');">
+                                        <?php esc_html_e('Supprimer', 'lika-redirect-manager'); ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             <?php endif; ?>

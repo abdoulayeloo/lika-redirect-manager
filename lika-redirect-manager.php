@@ -4,7 +4,7 @@
  * Plugin Name: Lika Redirect Manager
  * Plugin URI:  https://likagroupe.com/
  * Description: Gestion simple de redirections (Ancienne URL → Nouvelle URL)
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Laye
  * License:     GPL-2.0-or-later
  * Text Domain: lika-redirect-manager
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('LRM_PATH', plugin_dir_path(__FILE__));
-define('LRM_URL',  plugin_dir_url(__FILE__));
+define('LRM_URL', plugin_dir_url(__FILE__));
 define('LRM_BASENAME', plugin_basename(__FILE__));
 
 require_once LRM_PATH . 'includes/Plugin.php';
